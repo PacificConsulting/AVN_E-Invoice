@@ -2,6 +2,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debugg Production",
+            "type": "al",
+            "request": "attach",
+            "environmentType": "Production",
+            "environmentName": "Production",
+            "tenant": "22042b9d-37ba-4db5-a773-c76cbf8d092b",
+            "breakOnError": "All",
+            "breakOnRecordWrite": "None",
+            "enableSqlInformationDebugger": true,
+            "enableLongRunningSqlStatements": true,
+            "longRunningSqlStatementsThreshold": 500,
+            "numberOfSqlStatements": 10,
+            "breakOnNext": "WebClient",
+            "userId": "ADMIN"
+        },
+        {
             "name": "Microsoft cloud sandbox",
             "request": "launch",
             "type": "al",

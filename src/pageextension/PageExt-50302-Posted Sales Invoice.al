@@ -1,4 +1,4 @@
-pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
+﻿pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
 {
     // version NAVW19.00.00.48466,NAVIN9.00.00.48466
     //Old URL https://pcazureeinvoiceintegration.azurewebsites.net
@@ -256,6 +256,7 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
         RoundOff: Decimal;
         SLI: Record 113;
         Item: Record 27;
+        GLAcc: Record "G/L Account";
         EinvState: Text;
         Natureofsupply: Text;
         ExpCustomer: Record 18;
@@ -292,6 +293,7 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
         QRFileName: Text;
         URLResponse: HttpResponseMessage;
         CurrencyFactor: decimal;
+        UOM: Code[10];
     //QRGenerator: Codeunit "QR Generator";
 
     //>>API Call Var
@@ -331,7 +333,7 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
             CustPhoneNo := DELCHR(Customer."Phone No.", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
         CustPhoneNo := COPYSTR(CustPhoneNo, 1, 10);
         buyerdetails := Customer."GST Registration No." + '!' + Customer.Name + '!' + Customer."Name 2" + '!' + DELCHR(Customer.Address, '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + DELCHR(Customer."Address 2", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' +
-        Customer.City + '!' + DELCHR(Customer."Post Code", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + BuyState."State Code (GST Reg. No.)" + '!' + BuyState.Description + '!' + CustPhoneNo + '!' +
+        Customer.City + '!' + DELCHR(Customer."Post Code", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + BuyState."State Code (GST Reg. No.)" + '!' + BuyState."State Code (GST Reg. No.)" + '!' + CustPhoneNo + '!' +
         Customer."E-Mail";
 
         //PCPL 38
@@ -341,39 +343,40 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
                 Customer.City + '!' + '999999' + '!' + '96' + '!' + '96' + '!' + CustPhoneNo + '!' +
                 Customer."E-Mail";
             //PCPL 38
-        END
-        ELSE
-            IF ExpCustomer."GST Customer Type" <> ExpCustomer."GST Customer Type"::Export THEN BEGIN //PCPL0017-21-09-2021
-                SLI.RESET;
-                SLI.SETRANGE("Document No.", rec."No.");
-                IF SLI.FINDFIRST THEN
-                    REPEAT
-                        IF (SLI.Type <> SLI.Type::" ") AND (SLI.Quantity <> 0) THEN BEGIN
-                            IF SLI."GST Place of Supply" = SLI."GST Place of Supply"::"Ship-to Address" THEN
-                                IF rec."Ship-to Code" <> '' THEN
-                                    ShiptoAddress.RESET;
-                            ShiptoAddress.SETRANGE(ShiptoAddress.Code, Rec."Ship-to Code");
-                            ShiptoAddress.SETRANGE(ShiptoAddress."Customer No.", Rec."Sell-to Customer No.");
-                            IF ShiptoAddress.FINDFIRST THEN BEGIN
-                                ShipState.GET(ShiptoAddress.State);
-                                CustPhoneNo := DELCHR(ShiptoAddress."Phone No.", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
-                                CustPhoneNo := COPYSTR(CustPhoneNo, 1, 10);
-                                buyerdetails := ShiptoAddress."GST Registration No." + '!' + ShiptoAddress.Name + '!' + ShiptoAddress."Name 2" + '!' + DELCHR(ShiptoAddress.Address, '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + DELCHR(ShiptoAddress."Address 2", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' +
-                                ShiptoAddress.City + '!' + DelChr(ShiptoAddress."Post Code", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + ShipState."State Code (GST Reg. No.)" + '!' + ShipState.Description + '!' + CustPhoneNo + '!' +
-                                ShiptoAddress."E-Mail";
-                            END;
-                        END;
-                    UNTIL SLI.NEXT = 0;
-            END;  //PCPL50 begin and else if end
-                  /*
-                  Customer.GET("Sell-to Customer No.");
-                  BuyState.GET(Customer."State Code");
-                  CustPhoneNo := DELCHR(Customer."Phone No.",'=','!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
-                  buyerdetails := Customer."GST Registration No."+'!'+Customer.Name+'!'+Customer."Name 2"+'!'+Customer.Address+'!'+Customer."Address 2"+'!'+
-                  Customer.City+'!'+Customer."Post Code"+'!'+BuyState."State Code (GST Reg. No.)"+'!'+BuyState.Description+'!'+CustPhoneNo+'!'+
-                  Customer."E-Mail";
-                  */
-                  //PCPL0017-21-09-2021
+        END;
+        //ELSE
+        // IF ExpCustomer."GST Customer Type" <> ExpCustomer."GST Customer Type"::Export THEN BEGIN //PCPL0017-21-09-2021
+        //     SLI.RESET;
+        //     SLI.SETRANGE("Document No.", rec."No.");
+        //     IF SLI.FINDFIRST THEN
+        //         REPEAT
+        //             IF (SLI.Type <> SLI.Type::" ") AND (SLI.Quantity <> 0) THEN BEGIN
+        //                 IF SLI."GST Place of Supply" = SLI."GST Place of Supply"::"Ship-to Address" THEN
+        //                     IF rec."Ship-to Code" <> '' THEN
+        //                         ShiptoAddress.RESET;
+        //                 ShiptoAddress.SETRANGE(ShiptoAddress.Code, Rec."Ship-to Code");
+        //                 ShiptoAddress.SETRANGE(ShiptoAddress."Customer No.", Rec."Sell-to Customer No.");
+        //                 IF ShiptoAddress.FINDFIRST THEN BEGIN
+        //                     ShipState.GET(ShiptoAddress.State);
+        //                     CustPhoneNo := DELCHR(ShiptoAddress."Phone No.", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
+        //                     CustPhoneNo := COPYSTR(CustPhoneNo, 1, 10);
+        //                     buyerdetails := ShiptoAddress."GST Registration No." + '!' + ShiptoAddress.Name + '!' + ShiptoAddress."Name 2" + '!' + DELCHR(ShiptoAddress.Address, '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + DELCHR(ShiptoAddress."Address 2", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' +
+        //                     ShiptoAddress.City + '!' + DelChr(ShiptoAddress."Post Code", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + ShipState."State Code (GST Reg. No.)" + '!' + ShipState.Description + '!' + CustPhoneNo + '!' +
+        //                     ShiptoAddress."E-Mail";
+        //                 END;
+        //             END;
+        //         UNTIL SLI.NEXT = 0;
+        // END;     //Kunal suggest Customer details should send into buyerdetails
+        //PCPL50 begin and else if end
+        /*
+        Customer.GET("Sell-to Customer No.");
+        BuyState.GET(Customer."State Code");
+        CustPhoneNo := DELCHR(Customer."Phone No.",'=','!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
+        buyerdetails := Customer."GST Registration No."+'!'+Customer.Name+'!'+Customer."Name 2"+'!'+Customer.Address+'!'+Customer."Address 2"+'!'+
+        Customer.City+'!'+Customer."Post Code"+'!'+BuyState."State Code (GST Reg. No.)"+'!'+BuyState.Description+'!'+CustPhoneNo+'!'+
+        Customer."E-Mail";
+        */
+        //PCPL0017-21-09-2021
         IF (ExpCustomer."GST Customer Type" = ExpCustomer."GST Customer Type"::Export) THEN BEGIN //PCPL0017-21-09-2021
             shipdetails := 'URP' + '!' + Customer.Name + '!' + Customer."Name 2" + '!' + DELCHR(Customer.Address, '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + DELCHR(Customer."Address 2", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' +
             Customer.City + '!' + '999999' + '!' + '96';
@@ -558,12 +561,19 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
 
                 IF SalesInvoiceLine."GST Group Type" = SalesInvoiceLine."GST Group Type"::Service THEN
                     IsService := 'Y'
-                ELSE
+                ELSE Begin
                     IF SalesInvoiceLine."GST Group Type" = SalesInvoiceLine."GST Group Type"::Goods THEN
                         IsService := 'N';
+                    IF SalesInvoiceLine."Unit of Measure Code" = '' then
+                        UOM := 'PCS';
+                End;
 
                 IF SalesInvoiceLine.Type = SalesInvoiceLine.Type::Item THEN
-                    Item.GET(SalesInvoiceLine."No.");
+                    Item.GET(SalesInvoiceLine."No.")
+                else
+                    if SalesInvoiceLine.Type = SalesInvoiceLine.Type::"G/L Account" THEN
+                        GLAcc.Get(SalesInvoiceLine."No.");
+
 
                 /*
                 IF SalesInvoiceLine."Unit of Measure Code" = 'BL' THEN
@@ -577,18 +587,18 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
                 */
                 IF rec."Currency Code" = '' THEN BEGIN //PCPL50
                     CLEAR(RoundOff);
-                    IF SalesInvoiceLine."No." = '400523' THEN
+                    IF SalesInvoiceLine."No." = '5018230' THEN
                         RoundOff := SalesInvoiceLine."Line Amount";
                 END
                 //PCPL50 begin
                 ELSE
                     IF (rec."Currency Code" <> '') OR (ExpCustomer."GST Customer Type" = ExpCustomer."GST Customer Type"::Export) THEN BEGIN
                         CLEAR(RoundOff);
-                        IF SalesInvoiceLine."No." = '400523' THEN
+                        IF SalesInvoiceLine."No." = '5018230' THEN
                             RoundOff := (SalesInvoiceLine."Line Amount" / rec."Currency Factor");
                     END;
                 //PCPL50 end
-                // IF SalesInvoiceLine.Type=SalesInvoiceLine.Type::Item then
+
 
 
                 //
@@ -598,17 +608,17 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
                     CurrencyFactor := rec."Currency Factor";
 
                 IF (ExpCustomer."GST Customer Type" <> ExpCustomer."GST Customer Type"::Export) THEN BEGIN //PCPL50
-                    IF (itemlist = '') AND (SalesInvoiceLine."No." <> '400523') THEN
+                    IF (itemlist = '') AND (SalesInvoiceLine."No." <> '5018230') THEN
                         itemlist := FORMAT(SalesInvoiceLine."Line No.") + '!' + DELCHR(FORMAT(Item.Description), '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)|®|™') + '!' + IsService + '!' + SalesInvoiceLine."HSN/SAC Code" + '!' + '' + '!' +
-                        FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + SalesInvoiceLine."Unit of Measure Code" + '!' + FORMAT(ROUND(SalesInvoiceLine."Unit Price", 0.01, '>')) + '!' +
+                        FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + 'PCS'/*SalesInvoiceLine."Unit of Measure Code"*/ + '!' + FORMAT(ROUND(SalesInvoiceLine."Unit Price", 0.01, '>')) + '!' +
                         FORMAT(ROUND(SalesInvoiceLine."Unit Price", 0.01, '>') * (SalesInvoiceLine.Quantity)/*SalesInvoiceLine."Line Amount"*/) + '!' + '0' + '!' + FORMAT(SalesInvoiceLine."Line Discount Amount") + '!' + FORMAT(TCSAMTLinewise) +
                         '!' + FORMAT(GSTBaseAmtLineWise/*SalesInvoiceLine."Tax Base Amount"*/) + '!' +/*FORMAT(ROUND(SalesInvoiceLine."GST %",1,'='))*/FORMAT(GSTRate) + '!' + FORMAT(IGSTAmt) + '!' + FORMAT(CGSTAmt) + '!' +
                         FORMAT(SGSTAmt) + '!' + FORMAT(cessrate) + '!' + FORMAT(CESSGSTAmt) + '!' + '0' + '!' + '0' + '!' + '0' + '!' + '0' + '!' + FORMAT(TotalItemValue) +
                         '!' + '' + '!' + '' + '!' + '' + '!' + '' + '!' + '' + '!' + '' + '' + '!' + ''
                     ELSE
-                        IF SalesInvoiceLine."No." <> '400523' THEN
+                        IF SalesInvoiceLine."No." <> '5018230' THEN
                             itemlist := itemlist + ';' + FORMAT(SalesInvoiceLine."Line No.") + '!' + DELCHR(FORMAT(Item.Description), '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)|®|™') + '!' + IsService + '!' + SalesInvoiceLine."HSN/SAC Code" +
-                            '!' + '' + '!' + FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + SalesInvoiceLine."Unit of Measure Code" + '!' +
+                            '!' + '' + '!' + FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + 'PCS'/*SalesInvoiceLine."Unit of Measure Code"*/ + '!' +
                             FORMAT(ROUND(SalesInvoiceLine."Unit Price", 0.01, '>')) + '!' + FORMAT(ROUND(SalesInvoiceLine."Unit Price", 0.01, '>') * (SalesInvoiceLine.Quantity)/*SalesInvoiceLine."Line Amount"*/) + '!' + '0' + '!' +
                             FORMAT(SalesInvoiceLine."Line Discount Amount") + '!' + FORMAT(TCSAMTLinewise) + '!' + FORMAT(GSTBaseAmtLineWise/*SalesInvoiceLine."Tax Base Amount"*/) + '!' +
                             /*FORMAT(ROUND(SalesInvoiceLine."GST %",1,'='))*/FORMAT(GSTRate) + '!' + FORMAT(IGSTAmt) + '!' + FORMAT(CGSTAmt) + '!' + FORMAT(SGSTAmt) + '!' + FORMAT(cessrate) + '!' +
@@ -617,17 +627,17 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
                 END
                 ELSE
                     IF (rec."Currency Code" <> '') OR (ExpCustomer."GST Customer Type" = ExpCustomer."GST Customer Type"::Export) THEN BEGIN
-                        IF (itemlist = '') AND (SalesInvoiceLine."No." <> '400523') THEN
+                        IF (itemlist = '') AND (SalesInvoiceLine."No." <> '5018230') THEN
                             itemlist := FORMAT(SalesInvoiceLine."Line No.") + '!' + DELCHR(FORMAT(Item.Description), '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)|®|™') + '!' + IsService + '!' + SalesInvoiceLine."HSN/SAC Code" + '!' + '' + '!' +
-                            FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + SalesInvoiceLine."Unit of Measure Code" + '!' + FORMAT(ROUND((SalesInvoiceLine."Unit Price" / CurrencyFactor), 0.01, '>')) + '!' +
+                            FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + 'PCS'/*SalesInvoiceLine."Unit of Measure Code"*/ + '!' + FORMAT(ROUND((SalesInvoiceLine."Unit Price" / CurrencyFactor), 0.01, '>')) + '!' +
                             FORMAT((ROUND(SalesInvoiceLine."Unit Price", 0.01, '>') * (SalesInvoiceLine.Quantity)) / CurrencyFactor) + '!' + '0' + '!' + FORMAT(SalesInvoiceLine."Line Discount Amount" / CurrencyFactor) + '!' + FORMAT(TCSAMTLineWise / CurrencyFactor) +
                             '!' + FORMAT(GSTBaseAmtLineWise/*SalesInvoiceLine."Tax Base Amount" / "Currency Factor"*/) + '!' +/*FORMAT(ROUND(SalesInvoiceLine."GST %",1,'='))*/FORMAT(GSTRate) + '!' + FORMAT(IGSTAmt) + '!' + FORMAT(CGSTAmt) + '!' +
                             FORMAT(SGSTAmt) + '!' + FORMAT(cessrate) + '!' + FORMAT(CESSGSTAmt) + '!' + '0' + '!' + '0' + '!' + '0' + '!' + '0' + '!' + FORMAT(TotalItemValue) +
                             '!' + '' + '!' + '' + '!' + '' + '!' + '' + '!' + '' + '!' + '' + '' + '!' + ''
                         ELSE
-                            IF SalesInvoiceLine."No." <> '400523' THEN
+                            IF SalesInvoiceLine."No." <> '5018230' THEN
                                 itemlist := itemlist + ';' + FORMAT(SalesInvoiceLine."Line No.") + '!' + DELCHR(FORMAT(Item.Description), '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)|®|™') + '!' + IsService + '!' + SalesInvoiceLine."HSN/SAC Code" +
-                                '!' + '' + '!' + FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + SalesInvoiceLine."Unit of Measure Code" + '!' +
+                                '!' + '' + '!' + FORMAT(SalesInvoiceLine.Quantity) + '!' + '' + '!' + 'PCS'/* SalesInvoiceLine."Unit of Measure Code" */+ '!' +
                                 FORMAT(ROUND((SalesInvoiceLine."Unit Price" / CurrencyFactor), 0.01, '>')) + '!' + FORMAT((ROUND(SalesInvoiceLine."Unit Price", 0.01, '>') * (SalesInvoiceLine.Quantity)) / CurrencyFactor) + '!' + '0' + '!' +
                                 FORMAT(SalesInvoiceLine."Line Discount Amount" / CurrencyFactor) + '!' + FORMAT(TCSAMTLinewise / CurrencyFactor) + '!' + FORMAT(GSTBaseAmtLineWise / CurrencyFactor) + '!' +
                                 /*FORMAT(ROUND(SalesInvoiceLine."GST %",1,'='))*/FORMAT(GSTRate) + '!' + FORMAT(IGSTAmt) + '!' + FORMAT(CGSTAmt) + '!' + FORMAT(SGSTAmt) + '!' + FORMAT(cessrate) + '!' +
@@ -737,7 +747,7 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
         JsonEinvObject.WriteTo(reqOStm);
         reqOStm.WriteText(EinvRequestTxt);
         reqInStm.ReadText(EinvRequestTxt);
-        DownloadFromStream(ReqInStm, '', '', '', FileName);
+        // DownloadFromStream(ReqInStm, '', '', '', FileName);
         //clear(ReqtempBlob);//231122
         //Message('File Download Request');
         //>>************Request File Download code*************
@@ -776,7 +786,7 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
                                     //*********Download QR Image to local System*********//
                                     // DownloadFromStream(IntS, '', '', '', QRFileName);
                                 END else
-                                    Error('QR Response Error- %1', URLResponse.IsSuccessStatusCode);
+                                    Error('QR Response Error- %1', URLResponse.ReasonPhrase);
                             END else
                                 Error('QR Iamge Client Error %1', URLResponse.ReasonPhrase);
 
@@ -798,10 +808,12 @@ pageextension 50302 "Posted_sales_Inv_ext EINV" extends "Posted Sales Invoice"
                     END;
                 END ELSE
                     ERROR(result);
-
             end
-            else
-                Message('Einvoive Response is request,response not generated %1', EinvResponse.HttpStatusCode);
+            else begin
+                Einvcontent := EinvResponse.Content;
+                Einvcontent.ReadAs(result);
+                Message('E-Invoice Response: %1', result);
+            end;
         end;
 
         //PCPL41-EINV
