@@ -22,7 +22,8 @@
             "request": "launch",
             "type": "al",
             "environmentType": "Sandbox",
-            "environmentName": "AVNsandbox",
+           // "environmentName": "AVNsandbox",
+           "environmentName": "ProdCopy_11Jan2023",
             "tenant": "22042b9d-37ba-4db5-a773-c76cbf8d092b",
             "startupObjectId": 22,
             "startupObjectType": "Page",
@@ -30,7 +31,7 @@
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,
-            "schemaUpdateMode": "ForceSync"
+            //"schemaUpdateMode": "ForceSync"
         }
     ]
 }

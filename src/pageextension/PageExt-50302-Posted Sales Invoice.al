@@ -311,8 +311,14 @@
             IF ExpCustomer."GST Customer Type" = ExpCustomer."GST Customer Type"::"SEZ Unit" THEN BEGIN
                 Natureofsupply := 'SEZWOP';
                 transactiondetails := Natureofsupply + '!' + 'N' + '!' + '' + '!' + 'N';
-            END ELSE
-                transactiondetails := FORMAT(rec."Nature of Supply") + '!' + 'N' + '!' + '' + '!' + 'N';
+            END ELSE begin
+                if ExpCustomer."GST Customer Type" = ExpCustomer."GST Customer Type"::Registered then begin
+                    transactiondetails := 'B2B' + '!' + 'N' + '!' + '' + '!' + 'N';
+                end else begin
+                    transactiondetails := 'B2C' + '!' + 'N' + '!' + '' + '!' + 'N';
+                end;
+            end;
+
 
 
         Document_Date := FORMAT(rec."Posting Date", 0, '<Day,2>-<Month,2>-<year4>');
@@ -343,30 +349,30 @@
                 Customer.City + '!' + '999999' + '!' + '96' + '!' + '96' + '!' + CustPhoneNo + '!' +
                 Customer."E-Mail";
             //PCPL 38
-        END;
-        //ELSE
-        // IF ExpCustomer."GST Customer Type" <> ExpCustomer."GST Customer Type"::Export THEN BEGIN //PCPL0017-21-09-2021
-        //     SLI.RESET;
-        //     SLI.SETRANGE("Document No.", rec."No.");
-        //     IF SLI.FINDFIRST THEN
-        //         REPEAT
-        //             IF (SLI.Type <> SLI.Type::" ") AND (SLI.Quantity <> 0) THEN BEGIN
-        //                 IF SLI."GST Place of Supply" = SLI."GST Place of Supply"::"Ship-to Address" THEN
-        //                     IF rec."Ship-to Code" <> '' THEN
-        //                         ShiptoAddress.RESET;
-        //                 ShiptoAddress.SETRANGE(ShiptoAddress.Code, Rec."Ship-to Code");
-        //                 ShiptoAddress.SETRANGE(ShiptoAddress."Customer No.", Rec."Sell-to Customer No.");
-        //                 IF ShiptoAddress.FINDFIRST THEN BEGIN
-        //                     ShipState.GET(ShiptoAddress.State);
-        //                     CustPhoneNo := DELCHR(ShiptoAddress."Phone No.", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
-        //                     CustPhoneNo := COPYSTR(CustPhoneNo, 1, 10);
-        //                     buyerdetails := ShiptoAddress."GST Registration No." + '!' + ShiptoAddress.Name + '!' + ShiptoAddress."Name 2" + '!' + DELCHR(ShiptoAddress.Address, '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + DELCHR(ShiptoAddress."Address 2", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' +
-        //                     ShiptoAddress.City + '!' + DelChr(ShiptoAddress."Post Code", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + ShipState."State Code (GST Reg. No.)" + '!' + ShipState.Description + '!' + CustPhoneNo + '!' +
-        //                     ShiptoAddress."E-Mail";
-        //                 END;
-        //             END;
-        //         UNTIL SLI.NEXT = 0;
-        // END;     //Kunal suggest Customer details should send into buyerdetails
+        END
+        ELSE
+            IF ExpCustomer."GST Customer Type" <> ExpCustomer."GST Customer Type"::Export THEN BEGIN //PCPL0017-21-09-2021
+                SLI.RESET;
+                SLI.SETRANGE("Document No.", rec."No.");
+                IF SLI.FINDFIRST THEN
+                    REPEAT
+                        IF (SLI.Type <> SLI.Type::" ") AND (SLI.Quantity <> 0) THEN BEGIN
+                            IF SLI."GST Place of Supply" = SLI."GST Place of Supply"::"Ship-to Address" THEN
+                                IF rec."Ship-to Code" <> '' THEN
+                                    ShiptoAddress.RESET;
+                            ShiptoAddress.SETRANGE(ShiptoAddress.Code, Rec."Ship-to Code");
+                            ShiptoAddress.SETRANGE(ShiptoAddress."Customer No.", Rec."Sell-to Customer No.");
+                            IF ShiptoAddress.FINDFIRST THEN BEGIN
+                                ShipState.GET(ShiptoAddress.State);
+                                CustPhoneNo := DELCHR(ShiptoAddress."Phone No.", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)');
+                                CustPhoneNo := COPYSTR(CustPhoneNo, 1, 10);
+                                buyerdetails := ShiptoAddress."GST Registration No." + '!' + ShiptoAddress.Name + '!' + ShiptoAddress."Name 2" + '!' + DELCHR(ShiptoAddress.Address, '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + DELCHR(ShiptoAddress."Address 2", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' +
+                                ShiptoAddress.City + '!' + DelChr(ShiptoAddress."Post Code", '=', '!|@|#|$|%|^|&|*|/|''|\|-| |(|)') + '!' + ShipState."State Code (GST Reg. No.)" + '!' + ShipState.Description + '!' + CustPhoneNo + '!' +
+                                ShiptoAddress."E-Mail";
+                            END;
+                        END;
+                    UNTIL SLI.NEXT = 0;
+            END;     //Kunal suggest Customer details should send into buyerdetails
         //PCPL50 begin and else if end
         /*
         Customer.GET("Sell-to Customer No.");
@@ -420,6 +426,7 @@
         SalesInvoiceLine.SETRANGE("Document No.", rec."No.");
         SalesInvoiceLine.SETFILTER(Type, '<>%1', SalesInvoiceLine.Type::" ");
         SalesInvoiceLine.SETFILTER(Quantity, '<>%1', 0);
+        SalesInvoiceLine.SETFILTER("HSN/SAC Code", '<>%1', '');
         //SalesInvoiceLine.SETFILTER(SalesInvoiceLine."Unit of Measure Code",'<>%1','');
         IF SalesInvoiceLine.FINDSET THEN
             REPEAT
